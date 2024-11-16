@@ -3,12 +3,17 @@
   "version": "1.0.0",
   "description": "Prepare project files for AI assistance by minifying and organizing code.",
   "main": "index.js",
+  "type": "module",
   "bin": {
     "cpp": "bin/index.js"
   },
   "scripts": {
     "start": "node bin/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write ."
   },
   "keywords": [
     "AI",
@@ -33,5 +38,12 @@
   "bugs": {
     "url": "https://github.com/sthreem/code-prompt-prep/issues"
   },
-  "homepage": "https://github.com/sthreem/code-prompt-prep#readme"
+  "homepage": "https://github.com/sthreem/code-prompt-prep#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "prettier": "^3.3.3"
+  }
 }
