@@ -19,6 +19,21 @@ const WRITE_BUFFER_SIZE = 5 * 1024 * 1024;
 const MAX_BUFFER_ENTRIES = 100;
 
 /**
+ * Checks if a file is a symbolic link
+ * @param {string} filePath - Path to the file to check
+ * @returns {boolean} True if the file is a symbolic link
+ */
+function isSymbolicLink(filePath: string): boolean {
+  try {
+    const stats = fs.lstatSync(filePath);
+    return stats.isSymbolicLink();
+  } catch (error) {
+    // If we can't check the file, we'll treat it as a symlink to be safe
+    return true;
+  }
+}
+
+/**
  * Class to manage buffered writes to the output file.
  * Implements an efficient buffering system for writing content to files.
  * Automatically flushes the buffer when it reaches size or entry limits.
@@ -143,6 +158,7 @@ export async function loadIgnorePatterns(projectPath: string): Promise<IgnoreIns
 
 /**
  * Reads all files in the project directory, respecting ignore patterns.
+ * Safely handles symbolic links by skipping them.
  * @param {string} projectPath - Path to the project directory
  * @param {IgnoreInstance} gitignorePatterns - ignore instance with patterns
  * @returns {Promise<string[]>} Array of file paths
@@ -151,8 +167,13 @@ export async function readAllFiles(
   projectPath: string,
   gitignorePatterns: IgnoreInstance
 ): Promise<string[]> {
-  const ignoreFunc: IgnoreFunction = (file: string): boolean =>
-    gitignorePatterns.ignores(path.relative(projectPath, file));
+  const ignoreFunc: IgnoreFunction = (file: string): boolean => {
+    // Skip symbolic links
+    if (isSymbolicLink(file)) {
+      return true;
+    }
+    return gitignorePatterns.ignores(path.relative(projectPath, file));
+  };
 
   try {
     return await recursiveReadDir(projectPath, [ignoreFunc]);
@@ -229,7 +250,7 @@ export function filterFiles(
 
 /**
  * Process a single file by minifying its content and adding to the output buffer.
- * Uses streams for efficient file reading.
+ * Uses streams for efficient file reading. Skips symbolic links.
  * @param {string} filePath - Path to the file to process
  * @param {string} projectPath - Path to the project directory
  * @param {OutputBuffer} outputBuffer - Buffer for writing output
@@ -240,6 +261,11 @@ export async function processFile(
   projectPath: string,
   outputBuffer: OutputBuffer
 ): Promise<void> {
+  // Skip symbolic links
+  if (isSymbolicLink(filePath)) {
+    return;
+  }
+
   const relPath = path.relative(projectPath, filePath);
 
   try {
