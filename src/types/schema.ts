@@ -1,12 +1,19 @@
 import { z } from 'zod';
-import type { ValidationError } from './errors.js';
 
+/**
+ * Schema for file filtering options.
+ * Defines the structure for including or excluding files based on patterns.
+ */
 export const FilterOptionsSchema = z.object({
   files: z.array(z.string()).default([]),
   extensions: z.array(z.string()).default([]),
   folders: z.array(z.string()).default([]),
 });
 
+/**
+ * Schema for program options.
+ * Defines the complete configuration structure for the application.
+ */
 export const ProgramOptionsSchema = z.object({
   projectPath: z.string(),
   outputFolder: z.string().default('_ai_output'),
@@ -15,9 +22,24 @@ export const ProgramOptionsSchema = z.object({
   concurrency: z.number().int().positive().default(4),
 });
 
+/**
+ * Type representing file filtering options.
+ * @typedef {z.infer<typeof FilterOptionsSchema>} FilterOptions
+ */
 export type FilterOptions = z.infer<typeof FilterOptionsSchema>;
+
+/**
+ * Type representing complete program options.
+ * @typedef {z.infer<typeof ProgramOptionsSchema>} ProgramOptions
+ */
 export type ProgramOptions = z.infer<typeof ProgramOptionsSchema>;
 
+/**
+ * Validates and parses program options.
+ * @param {unknown} options - The options object to validate
+ * @returns {ProgramOptions} Validated and parsed program options
+ * @throws {Error} If validation fails with detailed error messages
+ */
 export const validateOptions = (options: unknown): ProgramOptions => {
   try {
     return ProgramOptionsSchema.parse(options);
@@ -32,7 +54,10 @@ export const validateOptions = (options: unknown): ProgramOptions => {
   }
 };
 
-// Constants for CLI options
+/**
+ * Constants defining CLI options with descriptions and default values.
+ * Used for configuring the command-line interface.
+ */
 export const CLI_OPTIONS = {
   projectPath: {
     description: 'Path to the project directory',
@@ -72,6 +97,11 @@ export const CLI_OPTIONS = {
   },
 } as const;
 
+/**
+ * Parses a comma-separated string into an array of trimmed strings.
+ * @param {string} value - The comma-separated string to parse
+ * @returns {string[]} Array of trimmed, non-empty strings
+ */
 export const parseCommaSeparated = (value: string): string[] =>
   value
     .split(',')

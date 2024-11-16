@@ -1,3 +1,19 @@
+/**
+ * Default patterns to ignore when processing files.
+ * This list includes common patterns for:
+ * - Version control system directories (.git, .svn, .hg)
+ * - Package manager directories (node_modules, bower_components)
+ * - IDE and editor directories (.idea, .vscode)
+ * - Build output directories (dist, build, out)
+ * - Binary and media files (images, videos, audio)
+ * - Documents (PDF, Office files)
+ * - Archive files (zip, tar, etc.)
+ * - Font files
+ * - Environment files
+ * - Package manager lock files
+ *
+ * @type {string[]}
+ */
 export const DEFAULT_IGNORE_PATTERNS: string[] = [
   // Folders
   '.git/',

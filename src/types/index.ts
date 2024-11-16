@@ -84,6 +84,8 @@ export interface FileMetadata {
 
 /**
  * Type guard for checking if a value is a FileMetadata object
+ * @param {unknown} value - The value to check
+ * @returns {boolean} True if the value is a FileMetadata object, false otherwise
  */
 export function isFileMetadata(value: unknown): value is FileMetadata {
   return (

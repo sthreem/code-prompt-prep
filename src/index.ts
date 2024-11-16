@@ -16,11 +16,15 @@ import {
   CLI_OPTIONS,
   parseCommaSeparated,
   validateOptions,
-  type FilterOptions,
   type ProgramOptions,
 } from './types/schema.js';
 import { FileProcessingError, ValidationError } from './types/errors.js';
 
+/**
+ * Initialize the command-line interface with all available options and their descriptions.
+ * This sets up the CLI using Commander.js with all the necessary options for file processing.
+ * @type {Command}
+ */
 const program = new Command()
   .name('cpp')
   .description('Prepare project files for AI assistance by minifying and organizing code.')
@@ -72,6 +76,20 @@ const program = new Command()
   )
   .parse(process.argv);
 
+/**
+ * Main function that orchestrates the entire file processing workflow.
+ * This function handles the core logic of the application, including:
+ * - Parsing and validating command line options
+ * - Setting up the output directory
+ * - Managing the file processing queue
+ * - Error handling and reporting
+ *
+ * @async
+ * @returns {Promise<void>} A promise that resolves when all processing is complete
+ * @throws {ValidationError} If the provided options are invalid
+ * @throws {FileProcessingError} If there are errors during file processing
+ * @throws {Error} For any other unexpected errors
+ */
 async function main(): Promise<void> {
   try {
     const opts = program.opts();

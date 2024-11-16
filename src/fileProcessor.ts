@@ -12,8 +12,9 @@ type IgnoreInstance = ReturnType<typeof ignore>;
 
 /**
  * Adds the output folder to the project's .gitignore file.
- * @param projectPath - Path to the project directory.
- * @param folderName - Name of the output folder.
+ * @param {string} projectPath - Path to the project directory
+ * @param {string} folderName - Name of the output folder
+ * @returns {Promise<void>}
  */
 export async function addToGitignore(projectPath: string, folderName: string): Promise<void> {
   const gitignorePath = path.join(projectPath, '.gitignore');
@@ -38,8 +39,8 @@ export async function addToGitignore(projectPath: string, folderName: string): P
 
 /**
  * Loads ignore patterns from .gitignore and default patterns.
- * @param projectPath - Path to the project directory.
- * @returns An instance of ignore with loaded patterns.
+ * @param {string} projectPath - Path to the project directory
+ * @returns {Promise<IgnoreInstance>} An instance of ignore with loaded patterns
  */
 export async function loadIgnorePatterns(projectPath: string): Promise<IgnoreInstance> {
   const gitignorePath = path.join(projectPath, '.gitignore');
@@ -61,9 +62,9 @@ export async function loadIgnorePatterns(projectPath: string): Promise<IgnoreIns
 
 /**
  * Reads all files in the project directory, respecting ignore patterns.
- * @param projectPath - Path to the project directory.
- * @param gitignorePatterns - ignore instance with patterns.
- * @returns Array of file paths.
+ * @param {string} projectPath - Path to the project directory
+ * @param {IgnoreInstance} gitignorePatterns - ignore instance with patterns
+ * @returns {Promise<string[]>} Array of file paths
  */
 export async function readAllFiles(
   projectPath: string,
@@ -85,12 +86,12 @@ export async function readAllFiles(
 
 /**
  * Filters files based on include and exclude options.
- * @param files - Array of file paths.
- * @param projectPath - Path to the project directory.
- * @param include - Include options.
- * @param exclude - Exclude options.
- * @param gitignorePatterns - ignore instance with patterns.
- * @returns Filtered array of file paths.
+ * @param {string[]} files - Array of file paths
+ * @param {string} projectPath - Path to the project directory
+ * @param {FilterOptions} include - Include options
+ * @param {FilterOptions} exclude - Exclude options
+ * @param {IgnoreInstance} gitignorePatterns - ignore instance with patterns
+ * @returns {string[]} Filtered array of file paths
  */
 export function filterFiles(
   files: string[],
@@ -147,9 +148,10 @@ export function filterFiles(
 
 /**
  * Process a single file by minifying its content and appending to the output file.
- * @param filePath - Path to the file to process.
- * @param projectPath - Path to the project directory.
- * @param outputFile - Path to the output file.
+ * @param {string} filePath - Path to the file to process
+ * @param {string} projectPath - Path to the project directory
+ * @param {string} outputFile - Path to the output file
+ * @returns {Promise<void>}
  */
 export async function processFile(
   filePath: string,
@@ -174,9 +176,10 @@ export async function processFile(
 /**
  * Processes multiple files by minifying and writing to the output file.
  * @deprecated Use processFile with concurrent queue instead.
- * @param files - Array of file paths to process.
- * @param projectPath - Path to the project directory.
- * @param outputFile - Path to the output file.
+ * @param {string[]} files - Array of file paths to process
+ * @param {string} projectPath - Path to the project directory
+ * @param {string} outputFile - Path to the output file
+ * @returns {Promise<void>}
  */
 export async function processFiles(
   files: string[],

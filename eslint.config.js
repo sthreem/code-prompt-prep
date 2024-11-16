@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import prettier from 'eslint-plugin-prettier';
+import jsdoc from 'eslint-plugin-jsdoc';
 
 export default [
   js.configs.recommended,
@@ -10,6 +11,7 @@ export default [
     plugins: {
       '@typescript-eslint': tsPlugin,
       prettier: prettier,
+      jsdoc: jsdoc,
     },
     languageOptions: {
       parser: tsParser,
@@ -32,6 +34,34 @@ export default [
       '@typescript-eslint/explicit-module-boundary-types': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
+
+      // JSDoc rules
+      'jsdoc/require-jsdoc': [
+        'error',
+        {
+          publicOnly: true,
+          require: {
+            FunctionDeclaration: true,
+            MethodDefinition: true,
+            ClassDeclaration: true,
+            ArrowFunctionExpression: true,
+            FunctionExpression: true,
+          },
+        },
+      ],
+      'jsdoc/require-description': 'error',
+      'jsdoc/require-param': 'error',
+      'jsdoc/require-param-type': 'error',
+      'jsdoc/require-param-description': 'error',
+      'jsdoc/require-returns': 'error',
+      'jsdoc/require-returns-type': 'error',
+      'jsdoc/require-returns-description': 'error',
+      'jsdoc/valid-types': 'error',
+    },
+    settings: {
+      jsdoc: {
+        mode: 'typescript',
+      },
     },
   },
   {

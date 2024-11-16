@@ -1,21 +1,25 @@
+import { setTimeout, clearTimeout } from 'timers';
+
 /**
  * Type guard to check if a value is a non-null object
- * @param value - Value to check
+ * @param {unknown} value - Value to check
+ * @returns {boolean} True if the value is a non-null object
  */
 export const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
 /**
  * Type guard to check if a value is a string
- * @param value - Value to check
+ * @param {unknown} value - Value to check
+ * @returns {boolean} True if the value is a string
  */
 export const isString = (value: unknown): value is string => typeof value === 'string';
 
 /**
  * Minifies code by removing comments and unnecessary whitespace.
  * Uses modern regex patterns and string methods.
- * @param content - Code content to minify.
- * @returns Minified code.
+ * @param {string} content - Code content to minify
+ * @returns {string} Minified code
  */
 export function minifyCode(content: string): string {
   return (
@@ -39,7 +43,7 @@ export function minifyCode(content: string): string {
 
 /**
  * Formats the current timestamp using modern date formatting.
- * @returns Formatted timestamp string in the format YYYYMMdd_HHmmss.
+ * @returns {string} Formatted timestamp string in the format YYYYMMdd_HHmmss
  */
 export function formatTimestamp(): string {
   const now = new Date();
@@ -57,8 +61,8 @@ export function formatTimestamp(): string {
 
 /**
  * Ensures the input is an array using modern array methods.
- * @param value - The value to convert.
- * @returns The value as an array.
+ * @param {T | T[] | undefined | null} value - The value to convert
+ * @returns {T[]} The value as an array
  */
 export function toArray<T>(value: T | T[] | undefined | null): T[] {
   if (value === undefined || value === null) return [];
@@ -67,8 +71,8 @@ export function toArray<T>(value: T | T[] | undefined | null): T[] {
 
 /**
  * Safely joins path segments using modern path manipulation.
- * @param segments - Path segments to join.
- * @returns Joined path string.
+ * @param {string[]} segments - Path segments to join
+ * @returns {string} Joined path string
  */
 export function joinPath(...segments: string[]): string {
   return segments
@@ -79,25 +83,29 @@ export function joinPath(...segments: string[]): string {
 
 /**
  * Creates a debounced version of a function.
- * @param fn - Function to debounce.
- * @param delay - Delay in milliseconds.
+ * @param {Function} fn - Function to debounce
+ * @param {number} delay - Delay in milliseconds
+ * @returns {Function} Debounced function
  */
 export function debounce<T extends (...args: never[]) => void>(
   fn: T,
   delay: number
 ): (...args: Parameters<T>) => void {
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: ReturnType<typeof setTimeout>;
 
   return (...args: Parameters<T>): void => {
-    clearTimeout(timeoutId);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
     timeoutId = setTimeout(() => fn(...args), delay);
   };
 }
 
 /**
  * Creates a throttled version of a function.
- * @param fn - Function to throttle.
- * @param limit - Time limit in milliseconds.
+ * @param {Function} fn - Function to throttle
+ * @param {number} limit - Time limit in milliseconds
+ * @returns {Function} Throttled function
  */
 export function throttle<T extends (...args: never[]) => void>(
   fn: T,
