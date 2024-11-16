@@ -11,6 +11,9 @@ import {
   readAllFiles,
   filterFiles,
   processFile,
+  createOutputBuffer,
+  closeOutputBuffer,
+  type OutputBuffer,
 } from './fileProcessor.js';
 import { formatTimestamp } from './utils.js';
 import {
@@ -27,12 +30,12 @@ type IgnoreInstance = ReturnType<typeof ignore>;
 // Track active spinners for cleanup
 const activeSpinners = new Set<ReturnType<typeof createSpinner>>();
 
-// Track the output file for cleanup
-let currentOutputFile: string | null = null;
+// Track the output buffer for cleanup
+let currentOutputBuffer: OutputBuffer | null = null;
 
 /**
  * Cleanup routine for graceful shutdown
- * Stops all spinners and removes incomplete output file
+ * Stops all spinners and closes output buffer
  */
 async function cleanup(): Promise<void> {
   // Stop all active spinners
@@ -41,14 +44,15 @@ async function cleanup(): Promise<void> {
   });
   activeSpinners.clear();
 
-  // Remove incomplete output file if it exists
-  if (currentOutputFile && (await fs.pathExists(currentOutputFile))) {
+  // Close output buffer if it exists
+  if (currentOutputBuffer) {
     try {
-      await fs.remove(currentOutputFile);
-      displayMessage(MessageType.INFO, 'Cleaned up incomplete output file');
+      await closeOutputBuffer(currentOutputBuffer);
+      displayMessage(MessageType.INFO, 'Cleaned up output buffer');
     } catch (error) {
-      displayMessage(MessageType.ERROR, 'Failed to clean up output file');
+      displayMessage(MessageType.ERROR, 'Failed to clean up output buffer');
     }
+    currentOutputBuffer = null;
   }
 }
 
@@ -187,7 +191,7 @@ async function main(): Promise<void> {
     // Create timestamped output file
     const timestamp = formatTimestamp();
     const outputFile = path.join(outputFolder, `${timestamp}.txt`);
-    currentOutputFile = outputFile;
+    currentOutputBuffer = createOutputBuffer(outputFile);
 
     // Initialize processing queue
     const queue = new PQueue({ concurrency: options.concurrency });
@@ -253,7 +257,7 @@ async function main(): Promise<void> {
       await queue.addAll(
         filteredFiles.map(file => async () => {
           try {
-            await processFile(file, options.projectPath, outputFile);
+            await processFile(file, options.projectPath, currentOutputBuffer!);
             processedCount++;
             displayMessage(
               MessageType.SUCCESS,
@@ -268,8 +272,9 @@ async function main(): Promise<void> {
         })
       );
 
-      // Clear the output file tracking since processing completed successfully
-      currentOutputFile = null;
+      // Close the output buffer
+      await closeOutputBuffer(currentOutputBuffer!);
+      currentOutputBuffer = null;
 
       displayMessage(
         MessageType.SUCCESS,

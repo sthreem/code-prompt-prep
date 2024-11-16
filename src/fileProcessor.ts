@@ -7,8 +7,89 @@ import { DEFAULT_IGNORE_PATTERNS } from './ignorePatterns.js';
 import type { FilterOptions } from './types/schema.js';
 import type { IgnoreFunction } from './types/index.js';
 import { FileProcessingError, GitignoreError } from './types/errors.js';
+import { createWriteStream, type WriteStream } from 'fs';
+import { createReadStream } from 'fs';
 
 type IgnoreInstance = ReturnType<typeof ignore>;
+
+// Buffer size for write operations (5MB)
+const WRITE_BUFFER_SIZE = 5 * 1024 * 1024;
+
+// Maximum buffer entries before forced flush
+const MAX_BUFFER_ENTRIES = 100;
+
+/**
+ * Class to manage buffered writes to the output file.
+ * Implements an efficient buffering system for writing content to files.
+ * Automatically flushes the buffer when it reaches size or entry limits.
+ *
+ * @class
+ * @property {string[]} buffer - Array to store content before writing
+ * @property {number} bufferSize - Current size of buffered content in bytes
+ * @property {WriteStream} writeStream - Stream for writing to output file
+ */
+export class OutputBuffer {
+  private buffer: string[] = [];
+  private bufferSize = 0;
+  private writeStream: WriteStream;
+
+  /**
+   * Creates an instance of OutputBuffer.
+   * @param {string} outputFile - Path to the file where content will be written
+   */
+  constructor(outputFile: string) {
+    this.writeStream = createWriteStream(outputFile, { flags: 'a', encoding: 'utf8' });
+  }
+
+  /**
+   * Add content to the buffer
+   * @param {string} content - Content to add to buffer
+   */
+  async add(content: string): Promise<void> {
+    this.buffer.push(content);
+    this.bufferSize += content.length;
+
+    if (this.bufferSize >= WRITE_BUFFER_SIZE || this.buffer.length >= MAX_BUFFER_ENTRIES) {
+      await this.flush();
+    }
+  }
+
+  /**
+   * Flush buffer contents to file
+   */
+  async flush(): Promise<void> {
+    if (this.buffer.length === 0) return;
+
+    return new Promise<void>((resolve, reject) => {
+      const content = this.buffer.join('');
+      this.writeStream.write(content, (error: Error | null | undefined) => {
+        if (error) {
+          reject(error);
+        } else {
+          this.buffer = [];
+          this.bufferSize = 0;
+          resolve();
+        }
+      });
+    });
+  }
+
+  /**
+   * Close the write stream
+   */
+  async close(): Promise<void> {
+    await this.flush();
+    return new Promise<void>((resolve, reject) => {
+      this.writeStream.end((error: Error | null | undefined) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
+}
 
 /**
  * Adds the output folder to the project's .gitignore file.
@@ -147,23 +228,32 @@ export function filterFiles(
 }
 
 /**
- * Process a single file by minifying its content and appending to the output file.
+ * Process a single file by minifying its content and adding to the output buffer.
+ * Uses streams for efficient file reading.
  * @param {string} filePath - Path to the file to process
  * @param {string} projectPath - Path to the project directory
- * @param {string} outputFile - Path to the output file
+ * @param {OutputBuffer} outputBuffer - Buffer for writing output
  * @returns {Promise<void>}
  */
 export async function processFile(
   filePath: string,
   projectPath: string,
-  outputFile: string
+  outputBuffer: OutputBuffer
 ): Promise<void> {
   const relPath = path.relative(projectPath, filePath);
 
   try {
-    const content = await fs.readFile(filePath, 'utf8');
+    // Read file content as a stream
+    const readStream = createReadStream(filePath, { encoding: 'utf8' });
+    let content = '';
+
+    // Process the stream chunks
+    for await (const chunk of readStream) {
+      content += chunk;
+    }
+
     const minifiedContent = minifyCode(content);
-    await fs.appendFile(outputFile, `${relPath}\n${minifiedContent}\n\n`, 'utf8');
+    await outputBuffer.add(`${relPath}\n${minifiedContent}\n\n`);
   } catch (error) {
     throw new FileProcessingError(
       `Failed to process file: ${(error as Error).message}`,
@@ -171,6 +261,24 @@ export async function processFile(
       error as Error
     );
   }
+}
+
+/**
+ * Creates and initializes an output buffer for file processing
+ * @param {string} outputFile - Path to the output file
+ * @returns {OutputBuffer} Initialized output buffer
+ */
+export function createOutputBuffer(outputFile: string): OutputBuffer {
+  return new OutputBuffer(outputFile);
+}
+
+/**
+ * Closes the output buffer and ensures all content is written
+ * @param {OutputBuffer} buffer - The output buffer to close
+ * @returns {Promise<void>}
+ */
+export async function closeOutputBuffer(buffer: OutputBuffer): Promise<void> {
+  await buffer.close();
 }
 
 /**
@@ -186,7 +294,12 @@ export async function processFiles(
   projectPath: string,
   outputFile: string
 ): Promise<void> {
-  for (const file of files) {
-    await processFile(file, projectPath, outputFile);
+  const buffer = createOutputBuffer(outputFile);
+  try {
+    for (const file of files) {
+      await processFile(file, projectPath, buffer);
+    }
+  } finally {
+    await closeOutputBuffer(buffer);
   }
 }
