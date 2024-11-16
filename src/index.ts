@@ -19,6 +19,7 @@ import {
   type ProgramOptions,
 } from './types/schema.js';
 import { FileProcessingError, ValidationError } from './types/errors.js';
+import { displayMessage, MessageType, createSpinner } from './ui.js';
 
 /**
  * Initialize the command-line interface with all available options and their descriptions.
@@ -120,10 +121,14 @@ async function main(): Promise<void> {
     await fs.ensureDir(outputFolder);
 
     // Add output folder to .gitignore
+    const gitignoreSpinner = createSpinner('Adding output folder to .gitignore...');
     await addToGitignore(options.projectPath, options.outputFolder);
+    gitignoreSpinner.succeed('Output folder added to .gitignore');
 
     // Load ignore patterns
+    const ignoreSpinner = createSpinner('Loading ignore patterns...');
     const gitignorePatterns = await loadIgnorePatterns(options.projectPath);
+    ignoreSpinner.succeed('Ignore patterns loaded');
 
     // Create timestamped output file
     const timestamp = formatTimestamp();
@@ -133,7 +138,11 @@ async function main(): Promise<void> {
     const queue = new PQueue({ concurrency: options.concurrency });
 
     try {
+      const filesSpinner = createSpinner('Reading project files...');
       const files = await readAllFiles(options.projectPath, gitignorePatterns);
+      filesSpinner.succeed(`Found ${files.length} files`);
+
+      const filterSpinner = createSpinner('Filtering files...');
       const filteredFiles = filterFiles(
         files,
         options.projectPath,
@@ -141,13 +150,23 @@ async function main(): Promise<void> {
         options.exclude,
         gitignorePatterns
       );
+      filterSpinner.succeed(`Selected ${filteredFiles.length} files for processing`);
+
+      displayMessage(MessageType.INFO, 'Starting file processing...');
+
+      let processedCount = 0;
+      const totalFiles = filteredFiles.length;
 
       // Process files concurrently
       await queue.addAll(
         filteredFiles.map(file => async () => {
           try {
             await processFile(file, options.projectPath, outputFile);
-            console.log(`Processed: ${path.relative(options.projectPath, file)}`);
+            processedCount++;
+            displayMessage(
+              MessageType.SUCCESS,
+              `[${processedCount}/${totalFiles}] Processed: ${path.relative(options.projectPath, file)}`
+            );
           } catch (error) {
             if (error instanceof Error) {
               throw new FileProcessingError(`Failed to process file: ${file}`, file, error);
@@ -157,12 +176,15 @@ async function main(): Promise<void> {
         })
       );
 
-      console.log(`\nMinified code has been saved to ${outputFile}`);
+      displayMessage(
+        MessageType.SUCCESS,
+        `\nCompleted processing ${totalFiles} files. Output saved to ${outputFile}`
+      );
     } catch (error) {
       if (error instanceof FileProcessingError) {
-        console.error(`Error processing ${error.filePath}: ${error.message}`);
+        displayMessage(MessageType.ERROR, `Error processing ${error.filePath}: ${error.message}`);
         if (error.originalError) {
-          console.error('Original error:', error.originalError.message);
+          displayMessage(MessageType.ERROR, `Original error: ${error.originalError.message}`);
         }
       } else {
         throw error;
@@ -170,11 +192,11 @@ async function main(): Promise<void> {
     }
   } catch (error) {
     if (error instanceof ValidationError) {
-      console.error('Validation error:', error.message);
+      displayMessage(MessageType.ERROR, `Validation error: ${error.message}`);
     } else if (error instanceof Error) {
-      console.error('Fatal error:', error.message);
+      displayMessage(MessageType.ERROR, `Fatal error: ${error.message}`);
     } else {
-      console.error('An unknown error occurred');
+      displayMessage(MessageType.ERROR, 'An unknown error occurred');
     }
     process.exit(1);
   }
@@ -182,6 +204,6 @@ async function main(): Promise<void> {
 
 // Handle the main function with proper error catching
 main().catch(error => {
-  console.error('Unhandled error:', error);
+  displayMessage(MessageType.ERROR, `Unhandled error: ${error}`);
   process.exit(1);
 });
