@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
 /**
+ * Maximum allowed concurrency for file processing
+ * This limit helps prevent system resource exhaustion
+ */
+export const MAX_CONCURRENCY = 100;
+
+/**
  * Schema for file filtering options.
  * Defines the structure for including or excluding files based on patterns.
  */
@@ -19,7 +25,12 @@ export const ProgramOptionsSchema = z.object({
   outputFolder: z.string().default('_ai_output'),
   include: FilterOptionsSchema,
   exclude: FilterOptionsSchema,
-  concurrency: z.number().int().positive().default(4),
+  concurrency: z
+    .number()
+    .int()
+    .positive()
+    .max(MAX_CONCURRENCY, `Concurrency must not exceed ${MAX_CONCURRENCY} for system stability`)
+    .default(4),
 });
 
 /**
@@ -92,7 +103,7 @@ export const CLI_OPTIONS = {
     default: '',
   },
   concurrency: {
-    description: 'Number of files to process concurrently',
+    description: `Number of files to process concurrently (max ${MAX_CONCURRENCY})`,
     default: 4,
   },
 } as const;
