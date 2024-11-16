@@ -7,6 +7,9 @@
   "bin": {
     "cpp": "dist/index.js"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
@@ -29,10 +32,12 @@
   "author": "Sthreem sthreem@gmail.com",
   "license": "MIT",
   "dependencies": {
+    "commander": "^11.1.0",
     "fs-extra": "^11.2.0",
     "ignore": "^6.0.2",
-    "minimist": "^1.2.8",
-    "recursive-readdir": "^2.2.3"
+    "p-queue": "^7.4.1",
+    "recursive-readdir": "^2.2.3",
+    "zod": "^3.22.4"
   },
   "repository": {
     "type": "git",
@@ -45,7 +50,6 @@
   "devDependencies": {
     "@eslint/js": "^8.56.0",
     "@types/fs-extra": "^11.0.4",
-    "@types/minimist": "^1.2.5",
     "@types/node": "^20.10.0",
     "@types/recursive-readdir": "^2.2.4",
     "@typescript-eslint/eslint-plugin": "^6.12.0",

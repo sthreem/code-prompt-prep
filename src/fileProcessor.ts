@@ -4,7 +4,9 @@ import ignore from 'ignore';
 import recursiveReadDir from 'recursive-readdir';
 import { minifyCode } from './utils.js';
 import { DEFAULT_IGNORE_PATTERNS } from './ignorePatterns.js';
-import type { FilterOptions, IgnoreFunction } from './types/index.js';
+import type { FilterOptions } from './types/schema.js';
+import type { IgnoreFunction } from './types/index.js';
+import { FileProcessingError, GitignoreError } from './types/errors.js';
 
 type IgnoreInstance = ReturnType<typeof ignore>;
 
@@ -27,7 +29,10 @@ export async function addToGitignore(projectPath: string, folderName: string): P
     }
     await fs.appendFile(gitignorePath, entry);
   } catch (error) {
-    console.error(`Error updating .gitignore: ${(error as Error).message}`);
+    throw new GitignoreError(
+      `Failed to update .gitignore file: ${(error as Error).message}`,
+      error as Error
+    );
   }
 }
 
@@ -40,11 +45,18 @@ export async function loadIgnorePatterns(projectPath: string): Promise<IgnoreIns
   const gitignorePath = path.join(projectPath, '.gitignore');
   const ig = ignore().add(DEFAULT_IGNORE_PATTERNS);
 
-  if (await fs.pathExists(gitignorePath)) {
-    const content = await fs.readFile(gitignorePath, 'utf8');
-    ig.add(content);
+  try {
+    if (await fs.pathExists(gitignorePath)) {
+      const content = await fs.readFile(gitignorePath, 'utf8');
+      ig.add(content);
+    }
+    return ig;
+  } catch (error) {
+    throw new GitignoreError(
+      `Failed to load ignore patterns: ${(error as Error).message}`,
+      error as Error
+    );
   }
-  return ig;
 }
 
 /**
@@ -60,7 +72,15 @@ export async function readAllFiles(
   const ignoreFunc: IgnoreFunction = (file: string): boolean =>
     gitignorePatterns.ignores(path.relative(projectPath, file));
 
-  return recursiveReadDir(projectPath, [ignoreFunc]);
+  try {
+    return await recursiveReadDir(projectPath, [ignoreFunc]);
+  } catch (error) {
+    throw new FileProcessingError(
+      `Failed to read project files: ${(error as Error).message}`,
+      projectPath,
+      error as Error
+    );
+  }
 }
 
 /**
@@ -88,7 +108,6 @@ export function filterFiles(
     exclude.folders.length > 0;
 
   if (!hasFilters) {
-    console.log('No filters provided. Processing all files.');
     return files.filter(file => !gitignorePatterns.ignores(path.relative(projectPath, file)));
   }
 
@@ -127,7 +146,34 @@ export function filterFiles(
 }
 
 /**
- * Processes files by minifying and writing to the output file.
+ * Process a single file by minifying its content and appending to the output file.
+ * @param filePath - Path to the file to process.
+ * @param projectPath - Path to the project directory.
+ * @param outputFile - Path to the output file.
+ */
+export async function processFile(
+  filePath: string,
+  projectPath: string,
+  outputFile: string
+): Promise<void> {
+  const relPath = path.relative(projectPath, filePath);
+
+  try {
+    const content = await fs.readFile(filePath, 'utf8');
+    const minifiedContent = minifyCode(content);
+    await fs.appendFile(outputFile, `${relPath}\n${minifiedContent}\n\n`, 'utf8');
+  } catch (error) {
+    throw new FileProcessingError(
+      `Failed to process file: ${(error as Error).message}`,
+      filePath,
+      error as Error
+    );
+  }
+}
+
+/**
+ * Processes multiple files by minifying and writing to the output file.
+ * @deprecated Use processFile with concurrent queue instead.
  * @param files - Array of file paths to process.
  * @param projectPath - Path to the project directory.
  * @param outputFile - Path to the output file.
@@ -138,14 +184,6 @@ export async function processFiles(
   outputFile: string
 ): Promise<void> {
   for (const file of files) {
-    const relPath = path.relative(projectPath, file);
-    try {
-      const content = await fs.readFile(file, 'utf8');
-      const minifiedContent = minifyCode(content);
-      await fs.appendFile(outputFile, `${relPath}\n${minifiedContent}\n\n`, 'utf8');
-      console.log(`Processed: ${relPath}`);
-    } catch (error) {
-      console.error(`Error processing ${relPath}: ${(error as Error).message}`);
-    }
+    await processFile(file, projectPath, outputFile);
   }
 }
