@@ -1,0 +1,37 @@
+{
+  "name": "code-prompt-prep",
+  "version": "1.0.0",
+  "description": "Prepare project files for AI assistance by minifying and organizing code.",
+  "main": "index.js",
+  "bin": {
+    "cpp": "bin/index.js"
+  },
+  "scripts": {
+    "start": "node bin/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "AI",
+    "code",
+    "minify",
+    "automation",
+    "cli",
+    "preparation"
+  ],
+  "author": "Sthreem sthreem@gmail.com",
+  "license": "MIT",
+  "dependencies": {
+    "fs-extra": "^11.2.0",
+    "ignore": "^6.0.2",
+    "minimist": "^1.2.8",
+    "recursive-readdir": "^2.2.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sthreem/code-prompt-prep.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sthreem/code-prompt-prep/issues"
+  },
+  "homepage": "https://github.com/sthreem/code-prompt-prep#readme"
+}
