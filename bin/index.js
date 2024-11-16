@@ -6,6 +6,70 @@ const minimist = require("minimist");
 const ignore = require("ignore");
 const recursiveReadDir = require("recursive-readdir");
 
+const DEFAULT_IGNORE_PATTERNS = [
+  // Folders
+  ".git/",
+  ".svn/",
+  ".hg/",
+  "node_modules/",
+  "bower_components/",
+  ".idea/",
+  ".vscode/",
+  "dist/",
+  "build/",
+  "out/",
+  "target/",
+  "bin/",
+  "obj/",
+  // Files
+  ".gitignore",
+  "*.md",
+  "*.png",
+  "*.jpg",
+  "*.jpeg",
+  "*.gif",
+  "*.bmp",
+  "*.tiff",
+  "*.ico",
+  "*.svg",
+  "*.mp4",
+  "*.avi",
+  "*.mov",
+  "*.mkv",
+  "*.webm",
+  "*.mp3",
+  "*.wav",
+  "*.ogg",
+  "*.flac",
+  "*.zip",
+  "*.rar",
+  "*.7z",
+  "*.tar",
+  "*.gz",
+  "*.bz2",
+  "*.csv",
+  "*.xls",
+  "*.xlsx",
+  "*.pdf",
+  "*.doc",
+  "*.docx",
+  "*.ppt",
+  "*.pptx",
+  "*.class",
+  "*.o",
+  "*.so",
+  "*.a",
+  "*.exe",
+  "*.dll",
+  "*.woff",
+  "*.woff2",
+  "*.ttf",
+  "*.otf",
+  "*.eot",
+  ".env",
+  ".env.*",
+];
+
 async function addToGitignore(projectPath, folderName) {
   const gitignorePath = path.join(projectPath, ".gitignore");
   const entry = `/${folderName}/\n`;
@@ -47,7 +111,7 @@ async function processFile(filePath, projectPath, outputFile) {
 
 async function loadGitignorePatterns(projectPath) {
   const gitignorePath = path.join(projectPath, ".gitignore");
-  let ig = ignore();
+  let ig = ignore().add(DEFAULT_IGNORE_PATTERNS); // Start with default ignore patterns
   if (await fs.pathExists(gitignorePath)) {
     const content = await fs.readFile(gitignorePath, "utf8");
     ig.add(content);
@@ -56,7 +120,6 @@ async function loadGitignorePatterns(projectPath) {
 }
 
 function filterFiles(files, projectPath, include, exclude, gitignorePatterns) {
-  // If no include/exclude options are provided, process all files
   const hasFilters =
     include.files.length > 0 ||
     include.extensions.length > 0 ||
@@ -72,11 +135,10 @@ function filterFiles(files, projectPath, include, exclude, gitignorePatterns) {
     );
   }
 
-  // Apply filters if specified
   return files.filter((file) => {
     const relPath = path.relative(projectPath, file);
 
-    // Check if file is ignored by .gitignore
+    // Check if file is ignored by patterns
     if (gitignorePatterns.ignores(relPath)) {
       return false;
     }
@@ -143,14 +205,13 @@ async function main() {
   // Add output folder to .gitignore
   await addToGitignore(projectPath, outputFolderName);
 
-  // Load .gitignore patterns
+  // Load ignore patterns
   const gitignorePatterns = await loadGitignorePatterns(projectPath);
 
   // Create timestamped output file
   const timestamp = formatTimestamp();
   const outputFile = path.join(outputFolder, `${timestamp}.txt`);
 
-  // Parse include and exclude options
   const include = {
     files: toArray(argv["if"]).map((f) => path.normalize(f)),
     extensions: toArray(argv["ie"]),
@@ -163,7 +224,6 @@ async function main() {
     folders: toArray(argv["xf"]).map((f) => path.normalize(f)),
   };
 
-  // Read all files recursively, ignoring patterns
   let files;
   try {
     files = await recursiveReadDir(projectPath, [
@@ -177,7 +237,6 @@ async function main() {
     process.exit(1);
   }
 
-  // Filter files based on include/exclude options
   const filteredFiles = filterFiles(
     files,
     projectPath,
@@ -186,7 +245,6 @@ async function main() {
     gitignorePatterns
   );
 
-  // Process each file
   for (const file of filteredFiles) {
     await processFile(file, projectPath, outputFile);
   }
