@@ -1,16 +1,19 @@
 import fs from 'fs-extra';
-import path from 'path';
+import * as path from 'path';
 import ignore from 'ignore';
 import recursiveReadDir from 'recursive-readdir';
 import { minifyCode } from './utils.js';
 import { DEFAULT_IGNORE_PATTERNS } from './ignorePatterns.js';
+import type { FilterOptions, IgnoreFunction } from './types/index.js';
+
+type IgnoreInstance = ReturnType<typeof ignore>;
 
 /**
  * Adds the output folder to the project's .gitignore file.
- * @param {string} projectPath - Path to the project directory.
- * @param {string} folderName - Name of the output folder.
+ * @param projectPath - Path to the project directory.
+ * @param folderName - Name of the output folder.
  */
-async function addToGitignore(projectPath, folderName) {
+export async function addToGitignore(projectPath: string, folderName: string): Promise<void> {
   const gitignorePath = path.join(projectPath, '.gitignore');
   const entry = `/${folderName}/\n`;
 
@@ -24,18 +27,19 @@ async function addToGitignore(projectPath, folderName) {
     }
     await fs.appendFile(gitignorePath, entry);
   } catch (error) {
-    console.error(`Error updating .gitignore: ${error.message}`);
+    console.error(`Error updating .gitignore: ${(error as Error).message}`);
   }
 }
 
 /**
  * Loads ignore patterns from .gitignore and default patterns.
- * @param {string} projectPath - Path to the project directory.
- * @returns {object} - An instance of ignore with loaded patterns.
+ * @param projectPath - Path to the project directory.
+ * @returns An instance of ignore with loaded patterns.
  */
-async function loadIgnorePatterns(projectPath) {
+export async function loadIgnorePatterns(projectPath: string): Promise<IgnoreInstance> {
   const gitignorePath = path.join(projectPath, '.gitignore');
   const ig = ignore().add(DEFAULT_IGNORE_PATTERNS);
+
   if (await fs.pathExists(gitignorePath)) {
     const content = await fs.readFile(gitignorePath, 'utf8');
     ig.add(content);
@@ -45,26 +49,36 @@ async function loadIgnorePatterns(projectPath) {
 
 /**
  * Reads all files in the project directory, respecting ignore patterns.
- * @param {string} projectPath - Path to the project directory.
- * @param {object} gitignorePatterns - ignore instance with patterns.
- * @returns {Promise<string[]>} - Array of file paths.
+ * @param projectPath - Path to the project directory.
+ * @param gitignorePatterns - ignore instance with patterns.
+ * @returns Array of file paths.
  */
-async function readAllFiles(projectPath, gitignorePatterns) {
-  return recursiveReadDir(projectPath, [
-    file => gitignorePatterns.ignores(path.relative(projectPath, file)),
-  ]);
+export async function readAllFiles(
+  projectPath: string,
+  gitignorePatterns: IgnoreInstance
+): Promise<string[]> {
+  const ignoreFunc: IgnoreFunction = (file: string): boolean =>
+    gitignorePatterns.ignores(path.relative(projectPath, file));
+
+  return recursiveReadDir(projectPath, [ignoreFunc]);
 }
 
 /**
  * Filters files based on include and exclude options.
- * @param {string[]} files - Array of file paths.
- * @param {string} projectPath - Path to the project directory.
- * @param {object} include - Include options.
- * @param {object} exclude - Exclude options.
- * @param {object} gitignorePatterns - ignore instance with patterns.
- * @returns {string[]} - Filtered array of file paths.
+ * @param files - Array of file paths.
+ * @param projectPath - Path to the project directory.
+ * @param include - Include options.
+ * @param exclude - Exclude options.
+ * @param gitignorePatterns - ignore instance with patterns.
+ * @returns Filtered array of file paths.
  */
-function filterFiles(files, projectPath, include, exclude, gitignorePatterns) {
+export function filterFiles(
+  files: string[],
+  projectPath: string,
+  include: FilterOptions,
+  exclude: FilterOptions,
+  gitignorePatterns: IgnoreInstance
+): string[] {
   const hasFilters =
     include.files.length > 0 ||
     include.extensions.length > 0 ||
@@ -114,11 +128,15 @@ function filterFiles(files, projectPath, include, exclude, gitignorePatterns) {
 
 /**
  * Processes files by minifying and writing to the output file.
- * @param {string[]} files - Array of file paths to process.
- * @param {string} projectPath - Path to the project directory.
- * @param {string} outputFile - Path to the output file.
+ * @param files - Array of file paths to process.
+ * @param projectPath - Path to the project directory.
+ * @param outputFile - Path to the output file.
  */
-async function processFiles(files, projectPath, outputFile) {
+export async function processFiles(
+  files: string[],
+  projectPath: string,
+  outputFile: string
+): Promise<void> {
   for (const file of files) {
     const relPath = path.relative(projectPath, file);
     try {
@@ -127,9 +145,7 @@ async function processFiles(files, projectPath, outputFile) {
       await fs.appendFile(outputFile, `${relPath}\n${minifiedContent}\n\n`, 'utf8');
       console.log(`Processed: ${relPath}`);
     } catch (error) {
-      console.error(`Error processing ${relPath}: ${error.message}`);
+      console.error(`Error processing ${relPath}: ${(error as Error).message}`);
     }
   }
 }
-
-export { addToGitignore, loadIgnorePatterns, readAllFiles, filterFiles, processFiles };

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import path from 'path';
+import * as path from 'path';
 import minimist from 'minimist';
 import fs from 'fs-extra';
 import {
@@ -9,11 +9,12 @@ import {
   readAllFiles,
   filterFiles,
   processFiles,
-} from '../lib/fileProcessor.js';
-import { formatTimestamp, toArray } from '../lib/utils.js';
+} from './fileProcessor.js';
+import { formatTimestamp, toArray } from './utils.js';
+import type { FilterOptions, ParsedArgs } from './types/index.js';
 
-async function main() {
-  const argv = minimist(process.argv.slice(2));
+async function main(): Promise<void> {
+  const argv: ParsedArgs = minimist(process.argv.slice(2));
   const projectPath = path.resolve(argv._[0] || '.');
 
   // Validate project path
@@ -37,16 +38,16 @@ async function main() {
   const outputFile = path.join(outputFolder, `${timestamp}.txt`);
 
   // Parse include and exclude options
-  const include = {
-    files: toArray(argv['if']).map(f => path.normalize(f)),
+  const include: FilterOptions = {
+    files: toArray(argv['if']).map(f => path.normalize(f as string)),
     extensions: toArray(argv['ie']),
-    folders: toArray(argv['if']).map(f => path.normalize(f)),
+    folders: toArray(argv['if']).map(f => path.normalize(f as string)),
   };
 
-  const exclude = {
-    files: toArray(argv['xf']).map(f => path.normalize(f)),
+  const exclude: FilterOptions = {
+    files: toArray(argv['xf']).map(f => path.normalize(f as string)),
     extensions: toArray(argv['xe']),
-    folders: toArray(argv['xf']).map(f => path.normalize(f)),
+    folders: toArray(argv['xf']).map(f => path.normalize(f as string)),
   };
 
   try {
@@ -55,9 +56,13 @@ async function main() {
     await processFiles(filteredFiles, projectPath, outputFile);
     console.log(`Minified code has been saved to ${outputFile}`);
   } catch (error) {
-    console.error(`An error occurred: ${error.message}`);
+    console.error(`An error occurred: ${(error as Error).message}`);
     process.exit(1);
   }
 }
 
-main();
+// Handle the main function with proper error catching
+main().catch(error => {
+  console.error('Fatal error:', error);
+  process.exit(1);
+});

@@ -1,4 +1,4 @@
-export const DEFAULT_IGNORE_PATTERNS = [
+export const DEFAULT_IGNORE_PATTERNS: string[] = [
   // Folders
   '.git/',
   '.svn/',

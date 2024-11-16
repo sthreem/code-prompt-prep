@@ -2,18 +2,21 @@
   "name": "code-prompt-prep",
   "version": "1.0.0",
   "description": "Prepare project files for AI assistance by minifying and organizing code.",
-  "main": "index.js",
+  "main": "dist/index.js",
   "type": "module",
   "bin": {
-    "cpp": "bin/index.js"
+    "cpp": "dist/index.js"
   },
   "scripts": {
-    "start": "node bin/index.js",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc -w",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --check .",
-    "format:fix": "prettier --write ."
+    "format:fix": "prettier --write .",
+    "prepare": "npm run build"
   },
   "keywords": [
     "AI",
@@ -40,10 +43,17 @@
   },
   "homepage": "https://github.com/sthreem/code-prompt-prep#readme",
   "devDependencies": {
-    "@eslint/js": "^9.15.0",
-    "eslint": "^9.15.0",
+    "@eslint/js": "^8.56.0",
+    "@types/fs-extra": "^11.0.4",
+    "@types/minimist": "^1.2.5",
+    "@types/node": "^20.10.0",
+    "@types/recursive-readdir": "^2.2.4",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
+    "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
-    "prettier": "^3.3.3"
+    "prettier": "^3.3.3",
+    "typescript": "^5.3.3"
   }
 }

@@ -1,9 +1,9 @@
 /**
  * Minifies code by removing comments and unnecessary whitespace.
- * @param {string} content - Code content to minify.
- * @returns {string} - Minified code.
+ * @param content - Code content to minify.
+ * @returns Minified code.
  */
-function minifyCode(content) {
+export function minifyCode(content: string): string {
   // Remove single-line comments
   content = content.replace(/\/\/.*$/gm, '');
   // Remove multi-line comments
@@ -17,11 +17,11 @@ function minifyCode(content) {
 
 /**
  * Formats the current timestamp.
- * @returns {string} - Formatted timestamp.
+ * @returns Formatted timestamp string.
  */
-function formatTimestamp() {
+export function formatTimestamp(): string {
   const now = new Date();
-  const pad = n => n.toString().padStart(2, '0');
+  const pad = (n: number): string => n.toString().padStart(2, '0');
   return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(
     now.getDate()
   )}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
@@ -29,13 +29,11 @@ function formatTimestamp() {
 
 /**
  * Ensures the input is an array.
- * @param {*} value - The value to convert.
- * @returns {Array} - The value as an array.
+ * @param value - The value to convert.
+ * @returns The value as an array.
  */
-function toArray(value) {
+export function toArray<T>(value: T | T[] | undefined): T[] {
   if (Array.isArray(value)) return value;
   if (typeof value === 'undefined') return [];
   return [value];
 }
-
-export { minifyCode, formatTimestamp, toArray };
