@@ -12,9 +12,9 @@
 
 When interacting with AI tools, providing concise and relevant context is key to obtaining accurate and meaningful outputs. Large, unstructured codebases can overwhelm AI tools or lead to irrelevant responses. `Code Prompt Prep` solves this by generating **plain-text, minified versions of your code**, making it:
 
-- Easier to fit within input token limits.
-- Faster to process for the AI.
-- More focused, reducing noise from unnecessary comments, whitespaces, or excluded files.
+- **Easier to fit within input token limits.**
+- **Faster to process for the AI.**
+- **More focused**, reducing noise from unnecessary comments, whitespaces, or excluded files.
 
 Whether you're using AI for debugging, documentation, or code generation, this tool ensures that only the essential parts of your project are included in the prompt or context.
 
@@ -34,7 +34,7 @@ Whether you're using AI for debugging, documentation, or code generation, this t
 - **Concurrency Control**: Process multiple files simultaneously for faster execution.
 - **User-Friendly Interface**: Clear CLI messages, spinners, and detailed error handling.
 - **Robust Performance**: Stream-based file handling to minimize memory usage.
-- **Graceful Cleanup**: Ensures incomplete output files are removed if the process is interrupted.
+- **Graceful Cleanup**: Automatically removes incomplete output files if the process is interrupted.
 
 ---
 
@@ -85,6 +85,7 @@ cpp --project-path <path_to_project> [options]
    ```
 
 4. **Limit concurrency to 2 for slower systems**:
+
    ```bash
    cpp --project-path ./ --concurrency 2
    ```
@@ -146,15 +147,11 @@ The processed files are saved in the specified output folder (default: `_ai_outp
 
 The tool ensures:
 
-- Spinners and progress indicators are stopped.
-- Incomplete output files are cleaned up.
-- Active buffers are safely closed.
+- **Spinners and progress indicators are stopped.**
+- **Incomplete output files are cleaned up automatically.**
+- **Active buffers are safely closed.**
 
-To manually trigger cleanup (e.g., after a crash):
-
-```bash
-cpp --cleanup
-```
+This means that if you interrupt the process (e.g., pressing `Ctrl+C`), `Code Prompt Prep` will handle the cleanup without requiring any manual intervention.
 
 ---
 
